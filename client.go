@@ -38,7 +38,7 @@ type FirmataClient struct {
 	analogMappingDone bool
 	capabilityDone    bool
 
-	digitalPinState [256]byte
+	digitalPinState [16]byte
 
 	analogPinsChannelMap map[int]byte
 	analogChannelPinsMap map[byte]int
@@ -56,39 +56,35 @@ func NewClient(dev string, baud int) (client *FirmataClient, err error) {
 	var conn io.ReadWriteCloser
 
 	c := &serial.Config{Name: dev, Baud: baud}
+	fmt.Println("Opening port")
 	conn, err = serial.OpenPort(c)
 	if err != nil {
+		fmt.Println("Error opening port")
 		client.Log.Critical(err)
 		return
 	}
+	fmt.Println("Port opened")
 
 	logger := make(log4go.Logger)
 	logger.AddFilter("stdout", log4go.INFO, log4go.NewConsoleLogWriter())
+	fmt.Println("Creating Firmata client")
 	client = &FirmataClient{
 		serialDev: dev,
 		baud:      baud,
 		conn:      &conn,
 		Log:       &logger,
 	}
+	fmt.Println("Firmata client created")
 	go client.replyReader()
 
 	conn.Write([]byte{byte(SystemReset)})
-	t := time.NewTicker(time.Second)
 
-	for !(client.ready && client.analogMappingDone && client.capabilityDone) {
-		select {
-		case <-t.C:
-			//no-op
-		case <-time.After(time.Second * 15):
-			client.Log.Critical("No response in 30 seconds. Resetting arduino")
-			conn.Write([]byte{byte(SystemReset)})
-		case <-time.After(time.Second * 30):
-			client.Log.Critical("Unable to initialize connection")
-			conn.Close()
-			client = nil
-		}
+	fmt.Println("Validating connection to Firmata")
+
+	if !(client.ready && client.analogMappingDone && client.capabilityDone) {
+		time.Sleep(time.Millisecond * 5000)
 	}
-
+	fmt.Println("Firmata client ready to use")
 	client.Log.Info("Client ready to use")
 
 	return

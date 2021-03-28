@@ -38,7 +38,7 @@ type FirmataClient struct {
 	analogMappingDone bool
 	capabilityDone    bool
 
-	digitalPinState [8]byte
+	digitalPinState [256]byte
 
 	analogPinsChannelMap map[int]byte
 	analogChannelPinsMap map[byte]int
@@ -102,10 +102,12 @@ func (c *FirmataClient) Close() {
 
 // Sets the Pin mode (input, output, etc.) for the Arduino pin
 func (c *FirmataClient) SetPinMode(pin byte, mode PinMode) (err error) {
+	/*
 	if c.pinModes[pin][mode] == nil {
 		err = fmt.Errorf("Pin mode %v not supported by pin %v", mode, pin)
 		return
 	}
+	*/
 	cmd := []byte{byte(SetPinMode), (pin & 0x7F), byte(mode)}
 	err = c.sendCommand(cmd)
 	return
@@ -134,10 +136,12 @@ func (c *FirmataClient) EnableDigitalInput(pin uint, val bool) (err error) {
 
 // Set the value of a digital pin
 func (c *FirmataClient) DigitalWrite(pin uint, val bool) (err error) {
+	/*
 	if pin < 0 || pin > uint(len(c.pinModes)) && c.pinModes[pin][Output] != nil {
 		err = fmt.Errorf("Invalid pin number %v\n", pin)
 		return
 	}
+	*/
 	port := (pin / 8) & 0x7F
 	portData := &c.digitalPinState[port]
 	pin = pin % 8
